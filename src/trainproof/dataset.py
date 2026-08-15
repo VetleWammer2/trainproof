@@ -49,6 +49,8 @@ def build_dataset_commitment(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     if not records:
         raise DatasetError("dataset must not be empty")
+    if additional_roots not in (None, {}):
+        raise DatasetError("additional dataset roots are not supported by protocol v1")
     seen_ids: set[str] = set()
     openings: list[dict[str, Any]] = []
     leaf_commitments: list[bytes] = []
@@ -74,7 +76,7 @@ def build_dataset_commitment(
         "merkle_domain": DATASET_TREE_DOMAIN,
         "sha256_root": tree.root.hex(),
         "leaf_commitments": [leaf.hex() for leaf in leaf_commitments],
-        "additional_roots": additional_roots or {},
+        "additional_roots": {},
     }
     signed_statement = {
         "body": body,
@@ -123,9 +125,11 @@ def verify_dataset_statement(
         or not isinstance(body.get("record_count"), int)
         or isinstance(body["record_count"], bool)
         or body["record_count"] < 1
-        or not isinstance(body.get("additional_roots"), dict)
+        or body.get("additional_roots") != {}
     ):
-        raise DatasetError("invalid dataset identity, count, or additional roots")
+        raise DatasetError(
+            "invalid dataset identity/count or unsupported additional roots"
+        )
     leaves_raw = body.get("leaf_commitments")
     if not isinstance(leaves_raw, list) or len(leaves_raw) != body.get("record_count"):
         raise DatasetError("dataset leaf count mismatch")

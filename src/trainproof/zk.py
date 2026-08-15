@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .canonical import hash_bytes, hash_object, read_json, write_json
-from .constants import BN254_PRIME, PROTOCOL_VERSION
+from .constants import BN254_BASE_FIELD, BN254_PRIME, PROTOCOL_VERSION
 from .crypto import generate_keypair, sign_object, verify_signature
 from .transparency import (
     append_entry,
@@ -236,7 +236,31 @@ def _run_checked(
     return output
 
 
+def _validate_plonk_proof(proof: Any) -> dict[str, Any]:
+    point_names = {"A", "B", "C", "Z", "T1", "T2", "T3", "Wxi", "Wxiw"}
+    evaluation_names = {"eval_a", "eval_b", "eval_c", "eval_s1", "eval_s2", "eval_zw"}
+    _require_exact_keys(
+        proof,
+        point_names | evaluation_names | {"protocol", "curve"},
+        "PLONK proof",
+    )
+    if proof["protocol"] != "plonk" or proof["curve"] != "bn128":
+        raise ZkError("PLONK proof protocol or curve mismatch")
+    for name in point_names:
+        point = proof[name]
+        if not isinstance(point, list) or len(point) != 3:
+            raise ZkError(f"PLONK proof point {name} must have three coordinates")
+        _canonical_field(point[0], f"PLONK proof {name}.x", maximum=BN254_BASE_FIELD)
+        _canonical_field(point[1], f"PLONK proof {name}.y", maximum=BN254_BASE_FIELD)
+        if point[2] != "1":
+            raise ZkError(f"PLONK proof point {name} must use canonical affine form")
+    for name in evaluation_names:
+        _canonical_field(proof[name], f"PLONK proof {name}")
+    return proof
+
+
 def verify_plonk_files(public_dir: Path, project_root: Path) -> str:
+    _validate_plonk_proof(read_json(public_dir / "proof.json"))
     output = _run_checked(
         [
             _snarkjs(project_root),

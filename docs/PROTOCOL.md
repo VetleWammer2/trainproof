@@ -53,7 +53,9 @@ leaf_i = H_dataset_record({ index: i, record: record_i, salt: salt_i })
 The public statement contains every opaque leaf commitment, the leaf count,
 schema, and a count-bound binary Merkle root. The statement is signed by the
 dataset-custodian key pinned in the run manifest. The salt prevents practical
-dictionary tests against low-entropy records.
+dictionary tests against low-entropy records. Protocol v1 requires
+`additional_roots` to be exactly empty so the statement cannot carry an
+untyped payload.
 
 ## Ordering commitment
 
@@ -153,6 +155,8 @@ The host profile additionally binds `prevChain` to a fresh 128-bit `run_id`,
 derives `codeCommitment` from the pinned circuit bytes, derives the
 hyperparameter commitment from the fixed v1 specification, and requires all
 public field elements to be canonical decimal strings in `[0, p)`.
+The host also enforces the exact snarkjs PLONK proof schema and canonical
+curve/scalar field encodings before invoking the cryptographic verifier.
 
 The ordering relation proves only membership of `(step, sampleIndex)` in the
 committed tree. It does not prove that this tree is a permutation, that it was

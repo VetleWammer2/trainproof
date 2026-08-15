@@ -876,7 +876,7 @@ def verify_bundle(
                 "witness_independence": "key separation verified; organizational independence not established",
                 "external_timing": "not established by the bundle-local witness or timestamps",
                 "training_execution": "not publicly proven; private replay checks satisfiability, while a sound ZK backend can prove its circuit relation",
-                "data_privacy": "public bundle contains salted commitments, not records",
+                "data_privacy": "verification does not require records; confidentiality assumes the producer does not intentionally encode data in permitted cryptographic values",
             },
         }
     except Exception as exc:

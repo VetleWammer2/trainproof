@@ -84,6 +84,12 @@ def test_raw_plonk_verifier_rejects_modified_proof(tmp_path: Path) -> None:
     shutil.copytree(ZK_DEMO / "public", public_dir)
     proof_path = public_dir / "proof.json"
     proof = read_json(proof_path)
+    proof["plaintext_records"] = ["secret"]
+    write_json(proof_path, proof)
+    with pytest.raises(ZkError, match="unexpected or missing fields"):
+        verify_plonk_files(public_dir, PROJECT_ROOT)
+
+    proof.pop("plaintext_records")
     proof["A"][0] = str(int(proof["A"][0]) + 1)
     write_json(proof_path, proof)
     with pytest.raises(ZkError, match="PLONK verification failed"):

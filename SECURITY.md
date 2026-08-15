@@ -60,6 +60,13 @@ The default bootstrap checks the downloaded ceremony file against the BLAKE2b
 hash published by iden3/snarkjs. Pass `-VerifyTranscript` to audit every
 ceremony contribution locally.
 
+The public transcript and ZK verifiers do not require training records. That
+is not a proof that a malicious producer preserved confidentiality: a producer
+can intentionally encode information in salts, signatures, proof randomness,
+or other permitted cryptographic values. Strict v1 schemas reject unknown
+payload fields and require `additional_roots == {}`, but privacy remains an
+honest-producer property in addition to the ZK protocol's witness hiding.
+
 ## Production changes required
 
 - Put signing keys in HSMs or workload-attested key stores; never place them

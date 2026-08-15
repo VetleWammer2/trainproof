@@ -133,11 +133,16 @@ python -m trainproof zk-verify zk/demo-run --toolchain-root . --trust-policy C:\
 
 ## Assurance levels
 
-| Mode | Publicly detects tampering | Attributes workers | Verifies transition math | Keeps records from verifier |
+| Mode | Publicly detects tampering | Attributes workers | Verifies transition math | Records required to verify |
 |---|---:|---:|---:|---:|
-| Signed transcript | Yes | Manifest keys only | No | Yes |
-| Private replay | Yes | Manifest keys only | Satisfiability by replay | No; auditor sees openings |
-| Included PLONK demo | Yes | N/A, single transition | Yes, for the exact circuit | Yes |
+| Signed transcript | Yes | Manifest keys only | No | No |
+| Private replay | Yes | Manifest keys only | Satisfiability by replay | Yes; auditor sees openings |
+| Included PLONK demo | Yes | N/A, single transition | Yes, for the exact circuit | No |
+
+“No records required” is a verifier-input guarantee, not proof that a malicious
+producer did not voluntarily encode data in permitted cryptographic values.
+The strict schemas reject extra payload fields, while confidentiality still
+assumes an honest producer and sound randomness generation.
 
 The included ZK circuit proves one unsigned, range-constrained integer update
 over the BN254 field. It does **not** prove PyTorch, GPU execution, BF16/FP32,

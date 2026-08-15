@@ -11,6 +11,7 @@ import trainproof.bundle as bundle_module
 from trainproof.bundle import build_demo_bundle
 from trainproof.canonical import hash_object, read_json, write_json
 from trainproof.crypto import public_key_document, sign_object
+from trainproof.dataset import DatasetError, verify_dataset_statement
 from trainproof.verify import (
     VerificationError,
     _validated_replay_genesis,
@@ -78,6 +79,20 @@ def test_public_verifier_rejects_checkpoint_tampering(tmp_path: Path) -> None:
     report = verify_bundle(run)
     assert not report["valid"]
     assert "checkpoint" in report["errors"][0].lower()
+
+
+def test_dataset_v1_rejects_additional_payload_roots(tmp_path: Path) -> None:
+    run = _build(tmp_path)
+    statement = read_json(run / "public" / "dataset.statement.json")
+    statement["body"]["additional_roots"] = {"plaintext_records": ["secret"]}
+    statement["signature"] = sign_object(
+        run / "private" / "keys" / "custodian.private.json",
+        "dataset-statement/v1",
+        statement["body"],
+    )
+    custodian = read_json(run / "public" / "keys" / "custodian.public.json")
+    with pytest.raises(DatasetError, match="additional roots"):
+        verify_dataset_statement(statement, custodian)
 
 
 def test_public_verifier_rejects_step_tampering(tmp_path: Path) -> None:
