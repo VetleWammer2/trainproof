@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+dist/
+build/
+
+node_modules/
+tools/
+zk/build/
+zk/demo-run/
+
+demo-run/
+tampered-run/
