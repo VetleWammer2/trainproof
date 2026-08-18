@@ -14,7 +14,7 @@ relation adds 8,711 R1CS constraints for each added transition at the measured
 hashes, range and rescaling checks, and the two-feature update; it is not the
 cost of fixed-point multiplication alone. At `N=4`, the proving key is
 194.8 MB, and proof generation on the measured workstation took a median
-47.2 seconds with a median 1.38 GB peak primary-process working set. The
+49.4 seconds with a median 1.37 GB peak primary-process working set. The
 relation remains far smaller than a useful neural layer and excludes
 activations, tensors, optimizer state, reductions, and floating-point
 behavior.
@@ -32,23 +32,22 @@ Raw per-trial data is in
 The procedure is implemented by
 [`scripts/benchmark-zk.ps1`](../scripts/benchmark-zk.ps1).
 
-The result records base commit `da41c02e9c5c3435edc1d386f8cbfbf32499c8b0`
-and `worktreeDirtyDuringMeasurement: true`. It includes circuit and R1CS
-hashes, but it does not identify a clean commit containing the exact benchmark
-runner, reference implementation, witness generator, and inputs that were
-used. The measurements are therefore an evidence-bearing snapshot, not a
-fully reconstructible source-tree attestation. A rerun from a clean commit, or
-a manifest hashing every relevant source and fixture, is required for exact
-reproduction.
+The result records base commit `da41c02e9c5c3435edc1d386f8cbfbf32499c8b0`,
+measured implementation commit
+`210bd4625da0bc7d87d3f857b59e98203e49a01b`, and
+`worktreeDirtyDuringMeasurement: false`. It includes SHA-256 hashes for the
+benchmark runner, reference, witness generators, circuits, verifier, lockfile,
+and compiled R1CS artifacts. The end-to-end verifier sample additionally pins
+every public fixture file, including participant keys.
 
 Host: Windows 11 Pro, Intel i7-8700K (6 cores/12 threads), 16 GiB RAM; Circom
 2.2.3, snarkjs 0.7.6, circomlib 2.0.5, Node 24.18.0, and PLONK/BN254. The
 Powers-of-Tau file was `powersOfTau28_hez_final_16.ptau`. The bootstrap checks
-the downloaded file against the published BLAKE2b digest; the benchmark runner
-itself records the expected digest rather than recomputing it and does not
-record whether contribution-by-contribution transcript verification ran.
-These results should therefore be described as using a digest-pinned PoT file,
-not as evidence of a fresh full transcript audit.
+the downloaded file against the published BLAKE2b digest. The benchmark runner
+independently recomputed the actual digest, required it to match the pinned
+value, and records both. It did not run contribution-by-contribution transcript
+verification, which is recorded explicitly. These results therefore use a
+digest-matched PoT file and are not evidence of a fresh full transcript audit.
 
 Witness generation, proof generation, and verification are medians of three
 fresh CLI processes. “Fresh” does not mean that operating-system caches were
@@ -59,21 +58,27 @@ the primary process working set polled every 10 ms; it excludes unrelated host
 processes, is not whole-system peak RAM, and may not represent a backend that
 uses child processes or a GPU.
 
-| Profile | N | R1CS constraints | Average constraints/transition | PLONK constraints | R1CS bytes | zkey bytes | Witness median | Prove median | Prove peak | Verify median | Proof JSON |
+| Profile | N | R1CS constraints | Average constraints/transition | PLONK constraints | R1CS bytes | zkey bytes | Witness median | Prove median | Prove peak | Raw PLONK verify median | Proof JSON |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Legacy unsigned scalar v1 | 1 | 8,408 | 8,408.0 | 12,276 | 1,214,440 | 46,039,580 | 0.443 s | 12.672 s | 835 MB | 0.643 s | 2,248 B |
-| Fixed-point vector v2 | 1 | 9,765 | 9,765.0 | 14,604 | 1,423,044 | 48,758,796 | 0.426 s | 12.138 s | 836 MB | 0.601 s | 2,249 B |
-| Fixed-point vector v2 | 2 | 18,476 | 9,238.0 | 27,507 | 2,688,184 | 97,449,952 | 0.461 s | 26.009 s | 1,190 MB | 0.625 s | 2,249 B |
-| Fixed-point vector v2 | 4 | 35,898 | 8,974.5 | 53,313 | 5,218,464 | 194,832,264 | 0.460 s | 47.206 s | 1,384 MB | 0.665 s | 2,248 B |
+| Legacy unsigned scalar v1 | 1 | 8,408 | 8,408.0 | 12,276 | 1,214,440 | 46,039,580 | 0.373 s | 12.125 s | 835 MB | 0.592 s | 2,250 B |
+| Fixed-point vector v2 | 1 | 9,765 | 9,765.0 | 14,604 | 1,423,044 | 48,758,796 | 0.451 s | 13.594 s | 837 MB | 0.672 s | 2,250 B |
+| Fixed-point vector v2 | 2 | 18,476 | 9,238.0 | 27,507 | 2,688,184 | 97,449,952 | 0.396 s | 24.832 s | 1,201 MB | 0.609 s | 2,249 B |
+| Fixed-point vector v2 | 4 | 35,898 | 8,974.5 | 53,313 | 5,218,464 | 194,832,264 | 0.549 s | 49.421 s | 1,370 MB | 0.730 s | 2,251 B |
 
-The single `N=4` setup observation was 12.197 seconds and 1.467 GB peak
+The single `N=4` setup observation was 13.213 seconds and 1.499 GB peak
 primary-process working set. Verification-key JSON stayed about 2 KB, and the
 snarkjs proof JSON stayed about 2.25 KB. Those are JSON serialization sizes,
 not canonical binary or on-chain encodings. Constant proof-object shape does
 not imply constant proving work, key size, or public-input encoding cost.
 
-The three v2 proof-time ranges were 11.658–12.678 seconds at `N=1`,
-21.052–30.040 seconds at `N=2`, and 42.119–50.200 seconds at `N=4`. Three
+The raw PLONK verification medians above exclude source compilation, setup,
+artifact linkage, signed-envelope checks, and checkpoint validation. One
+separate end-to-end run of Trainproof's public verifier performed all of those
+checks in 16.183 seconds. It is a single observation; its recorded primary
+Python-process memory excludes the child compiler and Node setup processes.
+
+The three v2 proof-time ranges were 12.530–13.868 seconds at `N=1`,
+24.525–26.348 seconds at `N=2`, and 48.590–53.315 seconds at `N=4`. Three
 trials support the reported medians but do not characterize tails, thermal
 effects, or host-load variance.
 
@@ -95,27 +100,26 @@ consistent with stepwise domain sizing; it is not a fit for unmeasured sizes.
 
 The measured PLONK counts for `N=2` (27,507) and `N=4` (53,313) both exceed
 `2^14`. An `N=4` setup attempt with the former power-14 file was also observed
-to fail, but that failed invocation and its stderr are not represented in the
-machine-readable result, which contains successful profiles only. The
-production profile moved to the published power-16 file. Removing membership,
-range, or chain constraints to fit a smaller setup would change the proven
-relation and is not an acceptable optimization.
+to fail. The machine-readable result records its command, `53,313 > 2^14`
+stderr, exit code, timing, peak working set, source URL, and actual legacy-file
+digest. The production profile moved to the published power-16 file. Removing
+membership, range, or chain constraints to fit a smaller setup would change
+the proven relation and is not an acceptable optimization.
 
 ## Whole-relation v2 cost versus the old demo
 
 At `N=1`, v2 has 1,357 more R1CS constraints than the preserved v1 R1CS
 (+16.1%), 208,604 more R1CS bytes, and a 2,719,216-byte larger zkey. The
 preserved baseline is intended to reproduce the v1 relation from `main` and
-produced the R1CS hash recorded in the benchmark result. Exact source-tree
-reconstruction remains subject to the dirty-snapshot limitation above.
+produced the R1CS hash recorded in the benchmark result.
 
 This is not a fixed-point arithmetic microbenchmark. V2 also moves from one
 unsigned scalar feature to two signed features, changes record and state
 hashes, adds quotient/remainder checks, adds an explicit transition digest and
 chain hash, and makes state types closed under iteration. The delta is the
 whole-relation difference between v1 and v2. It does not isolate the cost of a
-multiply, rescale, signed range check, or second feature. The slightly lower
-v2 `N=1` proving median must not be read as fixed point making proving faster.
+multiply, rescale, signed range check, or second feature. The `N=1` proving
+time difference must not be attributed to fixed point alone.
 
 If a causal arithmetic cost is needed, a future experiment should compile an
 explicitly non-production ablation while retaining the full relation as the
@@ -154,7 +158,7 @@ The v2 `N=1` row is a small measured baseline: one two-feature linear
 prediction, signed error, two gradients, learning-rate rescaling, two weight
 updates, one bias update, dataset/order membership, state commitments, and one
 chain link. It costs 9,765 R1CS constraints, a 48.8 MB zkey, and a median
-12.1-second proof on this host.
+13.6-second proof on this host.
 
 It is not a neural-network training step and is not a formal lower bound for
 one. A single activated neuron would require declared activation and
@@ -175,7 +179,7 @@ protocol:
 - small static Merkle paths and a fixed operation graph whose ranges can be
   reviewed directly; and
 - the measured approximately 2.25 KB snarkjs proof JSON and approximately
-  0.6-second verification on this host.
+  0.7-second raw PLONK verification on this host.
 
 A zkVM may reduce circuit-authoring friction when the relation changes shape:
 variable-length loops, richer optimizer state, control flow, and tensor

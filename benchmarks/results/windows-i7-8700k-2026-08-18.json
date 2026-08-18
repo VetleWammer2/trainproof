@@ -1,0 +1,478 @@
+{
+  "schema": "trainproof-zk-benchmark/v1",
+  "measuredAtUtc": "2026-08-18T09:34:17.5978784Z",
+  "measurementNotes": [
+    "Each timed command ran as a fresh primary process; peakWorkingSetBytes is the maximum polled primary-process WorkingSet64/PeakWorkingSet64 at 10 ms intervals.",
+    "Witnesses were checked outside the reported witness timing. Input generation was outside all timed phases.",
+    "Witness, prove, and verify medians cover the configured number of fresh CLI processes (three by default); OS caches were not cleared and profile order was fixed.",
+    "Compile and PLONK setup are single samples per profile, not medians.",
+    "verifyMilliseconds is raw snarkjs PLONK verification; endToEndPublicVerifier separately measures the project verifier when a sealed demo fixture is present.",
+    "proofJsonSizeBytes is the UTF-8 snarkjs JSON serialization, not a canonical binary or on-chain encoding.",
+    "The legacy v1 and fixed-point v2 rows are intentionally non-equivalent relations and compare arithmetic/profile cost, not identical semantics."
+  ],
+  "source": {
+    "repository": "https://github.com/VetleWammer2/trainproof",
+    "baseMainCommit": "da41c02e9c5c3435edc1d386f8cbfbf32499c8b0",
+    "measuredImplementationCommit": "210bd4625da0bc7d87d3f857b59e98203e49a01b",
+    "branch": "agent/n-step-fixed-point-benchmarks",
+    "worktreeDirtyDuringMeasurement": false,
+    "relevantFileSha256": {
+      "zk/circuits/train_step.circom": "64442e1374f5451dc145247dded0d220559a6f465cbb907c8860a7b6c5f9b3d3",
+      "zk/circuits/legacy_train_step_v1.circom": "1584ca1bc4888855f1db9edeb5a9b29c5b73686f1e994a3bf8d9e8c111bb6687",
+      "zk/scripts/prepare-input.mjs": "b0c46e5804be1c77e8388189a1c3499e47f196f1e8a534d0beeb931d1673e1df",
+      "zk/scripts/prepare-legacy-input.mjs": "92077c244532b21ad91f0e120444e17d39e33586e5a5f5ed99f5a4c9963763b4",
+      "src/trainproof/fixed_point.py": "f0e5fe8e39dec7439e1366619a31ef52c056c661f7f138b788bef2a470eba314",
+      "scripts/fixed-point-reference.py": "6f6612b6e0eda900a7c0134373f4565858368a74bff3fe574b59f788d5a3504b",
+      "scripts/benchmark-zk.ps1": "ec94657545ebd8b22b2970f9b31c6dd82b2d04fed8d257195f94e97326315aee",
+      "scripts/verify-zk-demo.py": "72a0d903e9f0ddba7bf70b4f35c8408401ca6b0555084f3092b95f822377c8f3",
+      "src/trainproof/zk.py": "2d5809e09461e8d4ba5c5bf45cbfc8a4c9fe55233e57244d8b99c2909d2f24d8",
+      "package-lock.json": "23a95f5c344c7846f65021bc62654ee8c5b0651dce27bafe83fa4cd514f1ee37",
+      "pyproject.toml": "bfc391297cb6e73028629a108aea3325dac40eb877701f683aac07b03bb19308"
+    }
+  },
+  "machine": {
+    "os": "Microsoft Windows 11 Pro",
+    "osVersion": "10.0.26200",
+    "architecture": "64-biters",
+    "cpu": "Intel(R) Core(TM) i7-8700K CPU @ 3.70GHz",
+    "physicalCores": 6,
+    "logicalProcessors": 12,
+    "totalMemoryBytes": 17111965696
+  },
+  "tools": {
+    "circom": "2.2.3",
+    "circomSha256": "e43f132ee6f0aa79b705beceb59c2a7e6a54d7bdeab917ca34e9fc1951d185e1",
+    "node": "v24.18.0",
+    "python": "Python 3.14.0",
+    "npm": "11.16.0",
+    "snarkjs": "0.7.6",
+    "circomlib": "2.0.5",
+    "circomlibjs": "0.1.7",
+    "powersOfTauFile": "powersOfTau28_hez_final_16.ptau",
+    "powersOfTauExpectedBlake2b": "6a6277a2f74e1073601b4f9fed6e1e55226917efb0f0db8a07d98ab01df1ccf43eb0e8c3159432acd4960e2f29fe84a4198501fa54c8dad9e43297453efec125",
+    "powersOfTauActualBlake2b": "6a6277a2f74e1073601b4f9fed6e1e55226917efb0f0db8a07d98ab01df1ccf43eb0e8c3159432acd4960e2f29fe84a4198501fa54c8dad9e43297453efec125",
+    "powersOfTauDigestMatched": true,
+    "powersOfTauFullTranscriptVerificationPerformed": false
+  },
+  "capacityChecks": [
+    {
+      "profile": "fixed_point_v2_n4",
+      "executed": true,
+      "command": "snarkjs plonk setup <n4.r1cs> powersOfTau28_hez_final_14.ptau <zkey>",
+      "exitCode": -1,
+      "elapsedMilliseconds": 1825.39,
+      "peakWorkingSetBytes": 506130432,
+      "observedPlonkConstraints": 53313,
+      "maximumSupportedConstraints": 16384,
+      "output": "\u001b[32;22m[INFO]  \u001b[39;1msnarkJS\u001b[0m: Reading r1cs\n\u001b[32;22m[INFO]  \u001b[39;1msnarkJS\u001b[0m: Plonk constraints: 53313\n\u001b[31;22m[ERROR] \u001b[39;1msnarkJS\u001b[0m: circuit too big for this power of tau ceremony. 53313 > 2**14",
+      "powersOfTauFile": "powersOfTau28_hez_final_14.ptau",
+      "powersOfTauBlake2b": "eeefbcf7c3803b523c94112023c7ff89558f9b8e0cf5d6cdcba3ade60f168af4a181c9c21774b94fbae6c90411995f7d854d02ebd93fb66043dbb06f17a831c1",
+      "powersOfTauSourceUrl": "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_14.ptau"
+    }
+  ],
+  "endToEndPublicVerifier": {
+    "executed": true,
+    "samples": 1,
+    "elapsedMilliseconds": 16182.618,
+    "primaryProcessPeakWorkingSetBytes": 107831296,
+    "fixturePublicFileSha256": {
+      "certificate.json": "54b2229eb86896e5b3443c1672a433a4518e1301ce02957ab669306fad969dec",
+      "checkpoint.json": "d67a2781aa05067decc55b6ca8157879c65ab4a111802b2a1a304971232ca96f",
+      "dataset.statement.json": "70b06bd202b14c27126443de3e9483ddfbbd0499c253b7c7db653a7222b831e5",
+      "genesis.json": "e4f023c19abbbe9233dbbc94100a22503db18b3e204faa5d6b42a131ef9e337a",
+      "keys/coordinator.public.json": "1bec8e86a5963b9a974bd433f93d7120c7db8fb2a9aeaee5dfe9692c4710ae33",
+      "keys/custodian.public.json": "9db234842f2fe3a13dccd044c14d692b8261f412ddedbb25346cf3aaf3092301",
+      "keys/log-operator.public.json": "f409315339254e0b6d6b3bfa8fa7e6f07e3af943cd8d353c0a1783b6c5ef1ba4",
+      "keys/witness.public.json": "a7225b26b377e9a7835434de08a792afb76db97fd4cf9a220a9b2a573f9d2c17",
+      "ordering.statement.json": "4d76d5f322ddc103344041685f4e3eb475f9b17d6107f608a98d55e85d01bc04",
+      "precommit.json": "901b6b631ee20e3e4226f95fbf4e9fccbc257828c9d24690cc1774240e577d01",
+      "proof.json": "a174e866ebf1f18a147d163b0d39fb70a955224e97ddf418365eeb947b9dd342",
+      "public.json": "49bf3caf112d5481a74bb277531a3e44db5986d9c14bf73ce6edb9c367651be3",
+      "statement.json": "ebc37357db932951ff32a9d7722f51e0da210325af85a5eccc686e305efc8caf",
+      "step.json": "027e82f477e77160647db49c22ad64906332fb2f8a442c9f27195032307f1fd9",
+      "train_step.circom": "64442e1374f5451dc145247dded0d220559a6f465cbb907c8860a7b6c5f9b3d3",
+      "train_step.r1cs": "a87715bfe95e28562cfe5a08fc9edf1d76ba1f12a7b0a0fcca4b1afa3dc72de1",
+      "transparency.json": "7cc017db81498be04e4ccf6790f1d5c5a9dd92da80132abc3d4fe1e0b3b12bc4",
+      "verification_key.json": "e33fdeaba779412e645dc4108c4703115c27f2b2adc0d470dacd7a7da5cd020b"
+    },
+    "note": "This source-to-R1CS-to-verification-key public verifier includes child-process compilation and setup. Its wall time is end to end; the primary Python working set does not include child-process memory."
+  },
+  "profiles": [
+    {
+      "id": "legacy_integer_v1_n1",
+      "relationClass": "bounded unsigned scalar integer transition v1",
+      "n": 1,
+      "circuitSha256": "1584ca1bc4888855f1db9edeb5a9b29c5b73686f1e994a3bf8d9e8c111bb6687",
+      "r1csSha256": "82158224ebf252ddc024f2269f4a0c25aaaa6b9c2d11d0f1b3399d11b4227049",
+      "constraints": 8408,
+      "constraintsPerTransition": 8408.0,
+      "plonkConstraints": 12276,
+      "wires": 8409,
+      "publicInputs": 9,
+      "privateInputs": 22,
+      "compile": {
+        "elapsedMilliseconds": 5307.102,
+        "peakWorkingSetBytes": 787369984
+      },
+      "setup": {
+        "elapsedMilliseconds": 4021.643,
+        "peakWorkingSetBytes": 1244569600
+      },
+      "artifactSizesBytes": {
+        "circuit": 5596,
+        "r1cs": 1214440,
+        "wasm": 4301604,
+        "sym": 660011,
+        "zkey": 46039580,
+        "verificationKey": 2042
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "witness": {
+            "elapsedMilliseconds": 445.74,
+            "peakWorkingSetBytes": 100257792,
+            "sizeBytes": 269164
+          },
+          "prove": {
+            "elapsedMilliseconds": 13174.823,
+            "peakWorkingSetBytes": 833089536
+          },
+          "verify": {
+            "elapsedMilliseconds": 591.586,
+            "peakWorkingSetBytes": 240599040
+          },
+          "proofJsonSizeBytes": 2250,
+          "publicSignalsSizeBytes": 658
+        },
+        {
+          "trial": 2,
+          "witness": {
+            "elapsedMilliseconds": 372.834,
+            "peakWorkingSetBytes": 100130816,
+            "sizeBytes": 269164
+          },
+          "prove": {
+            "elapsedMilliseconds": 12124.855,
+            "peakWorkingSetBytes": 834756608
+          },
+          "verify": {
+            "elapsedMilliseconds": 563.722,
+            "peakWorkingSetBytes": 241750016
+          },
+          "proofJsonSizeBytes": 2250,
+          "publicSignalsSizeBytes": 658
+        },
+        {
+          "trial": 3,
+          "witness": {
+            "elapsedMilliseconds": 342.155,
+            "peakWorkingSetBytes": 99713024,
+            "sizeBytes": 269164
+          },
+          "prove": {
+            "elapsedMilliseconds": 11657.118,
+            "peakWorkingSetBytes": 838373376
+          },
+          "verify": {
+            "elapsedMilliseconds": 600.764,
+            "peakWorkingSetBytes": 240369664
+          },
+          "proofJsonSizeBytes": 2246,
+          "publicSignalsSizeBytes": 658
+        }
+      ],
+      "medians": {
+        "witnessMilliseconds": 372.834,
+        "witnessPeakWorkingSetBytes": 100130816.0,
+        "proveMilliseconds": 12124.855,
+        "provePeakWorkingSetBytes": 834756608.0,
+        "verifyMilliseconds": 591.586,
+        "verifyPeakWorkingSetBytes": 240599040.0,
+        "proofJsonSizeBytes": 2250.0
+      }
+    },
+    {
+      "id": "fixed_point_v2_n1",
+      "relationClass": "bounded signed fixed-point vector chain v2",
+      "n": 1,
+      "circuitSha256": "319af5909db9e85c258a413db994dbd3e88fff97fd17405a18922667ac6db3e2",
+      "r1csSha256": "f5b58950cf8ce4c7a0d4d4d230e5936651e61e46e7991dbb698be5362813b1df",
+      "constraints": 9765,
+      "constraintsPerTransition": 9765.0,
+      "plonkConstraints": 14604,
+      "wires": 9760,
+      "publicInputs": 10,
+      "privateInputs": 42,
+      "compile": {
+        "elapsedMilliseconds": 4989.639,
+        "peakWorkingSetBytes": 917000192
+      },
+      "setup": {
+        "elapsedMilliseconds": 3492.796,
+        "peakWorkingSetBytes": 1257635840
+      },
+      "artifactSizesBytes": {
+        "circuit": 14571,
+        "r1cs": 1423044,
+        "wasm": 4860154,
+        "sym": 990232,
+        "zkey": 48758796,
+        "verificationKey": 2042
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "witness": {
+            "elapsedMilliseconds": 451.034,
+            "peakWorkingSetBytes": 104603648,
+            "sizeBytes": 312396
+          },
+          "prove": {
+            "elapsedMilliseconds": 12529.893,
+            "peakWorkingSetBytes": 843706368
+          },
+          "verify": {
+            "elapsedMilliseconds": 672.232,
+            "peakWorkingSetBytes": 240214016
+          },
+          "proofJsonSizeBytes": 2252,
+          "publicSignalsSizeBytes": 665
+        },
+        {
+          "trial": 2,
+          "witness": {
+            "elapsedMilliseconds": 417.778,
+            "peakWorkingSetBytes": 104083456,
+            "sizeBytes": 312396
+          },
+          "prove": {
+            "elapsedMilliseconds": 13867.608,
+            "peakWorkingSetBytes": 834940928
+          },
+          "verify": {
+            "elapsedMilliseconds": 773.789,
+            "peakWorkingSetBytes": 240078848
+          },
+          "proofJsonSizeBytes": 2250,
+          "publicSignalsSizeBytes": 665
+        },
+        {
+          "trial": 3,
+          "witness": {
+            "elapsedMilliseconds": 542.069,
+            "peakWorkingSetBytes": 103882752,
+            "sizeBytes": 312396
+          },
+          "prove": {
+            "elapsedMilliseconds": 13594.414,
+            "peakWorkingSetBytes": 836685824
+          },
+          "verify": {
+            "elapsedMilliseconds": 575.523,
+            "peakWorkingSetBytes": 240906240
+          },
+          "proofJsonSizeBytes": 2248,
+          "publicSignalsSizeBytes": 665
+        }
+      ],
+      "medians": {
+        "witnessMilliseconds": 451.034,
+        "witnessPeakWorkingSetBytes": 104083456.0,
+        "proveMilliseconds": 13594.414,
+        "provePeakWorkingSetBytes": 836685824.0,
+        "verifyMilliseconds": 672.232,
+        "verifyPeakWorkingSetBytes": 240214016.0,
+        "proofJsonSizeBytes": 2250.0
+      }
+    },
+    {
+      "id": "fixed_point_v2_n2",
+      "relationClass": "bounded signed fixed-point vector chain v2",
+      "n": 2,
+      "circuitSha256": "049485c63d3afc41363a43b9dccdaa81f3ab2024f4c63803c998ba90a4819cbb",
+      "r1csSha256": "62b1210fd54052a566ef74e2c640b46d7271090d965aef22f93400bb9c61472d",
+      "constraints": 18476,
+      "constraintsPerTransition": 9238.0,
+      "plonkConstraints": 27507,
+      "wires": 18459,
+      "publicInputs": 10,
+      "privateInputs": 79,
+      "compile": {
+        "elapsedMilliseconds": 4976.463,
+        "peakWorkingSetBytes": 918786048
+      },
+      "setup": {
+        "elapsedMilliseconds": 6333.725,
+        "peakWorkingSetBytes": 1241030656
+      },
+      "artifactSizesBytes": {
+        "circuit": 14571,
+        "r1cs": 2688184,
+        "wasm": 5111280,
+        "sym": 1913586,
+        "zkey": 97449952,
+        "verificationKey": 2044
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "witness": {
+            "elapsedMilliseconds": 388.818,
+            "peakWorkingSetBytes": 100728832,
+            "sizeBytes": 590764
+          },
+          "prove": {
+            "elapsedMilliseconds": 24524.94,
+            "peakWorkingSetBytes": 1188818944
+          },
+          "verify": {
+            "elapsedMilliseconds": 604.336,
+            "peakWorkingSetBytes": 237068288
+          },
+          "proofJsonSizeBytes": 2249,
+          "publicSignalsSizeBytes": 667
+        },
+        {
+          "trial": 2,
+          "witness": {
+            "elapsedMilliseconds": 395.991,
+            "peakWorkingSetBytes": 101257216,
+            "sizeBytes": 590764
+          },
+          "prove": {
+            "elapsedMilliseconds": 26348.487,
+            "peakWorkingSetBytes": 1208672256
+          },
+          "verify": {
+            "elapsedMilliseconds": 702.857,
+            "peakWorkingSetBytes": 236728320
+          },
+          "proofJsonSizeBytes": 2248,
+          "publicSignalsSizeBytes": 667
+        },
+        {
+          "trial": 3,
+          "witness": {
+            "elapsedMilliseconds": 437.21,
+            "peakWorkingSetBytes": 101240832,
+            "sizeBytes": 590764
+          },
+          "prove": {
+            "elapsedMilliseconds": 24832.297,
+            "peakWorkingSetBytes": 1200685056
+          },
+          "verify": {
+            "elapsedMilliseconds": 609.457,
+            "peakWorkingSetBytes": 236482560
+          },
+          "proofJsonSizeBytes": 2250,
+          "publicSignalsSizeBytes": 667
+        }
+      ],
+      "medians": {
+        "witnessMilliseconds": 395.991,
+        "witnessPeakWorkingSetBytes": 101240832.0,
+        "proveMilliseconds": 24832.297,
+        "provePeakWorkingSetBytes": 1200685056.0,
+        "verifyMilliseconds": 609.457,
+        "verifyPeakWorkingSetBytes": 236728320.0,
+        "proofJsonSizeBytes": 2249.0
+      }
+    },
+    {
+      "id": "fixed_point_v2_n4",
+      "relationClass": "bounded signed fixed-point vector chain v2",
+      "n": 4,
+      "circuitSha256": "64442e1374f5451dc145247dded0d220559a6f465cbb907c8860a7b6c5f9b3d3",
+      "r1csSha256": "a87715bfe95e28562cfe5a08fc9edf1d76ba1f12a7b0a0fcca4b1afa3dc72de1",
+      "constraints": 35898,
+      "constraintsPerTransition": 8974.5,
+      "plonkConstraints": 53313,
+      "wires": 35857,
+      "publicInputs": 10,
+      "privateInputs": 153,
+      "compile": {
+        "elapsedMilliseconds": 6585.889,
+        "peakWorkingSetBytes": 920838144
+      },
+      "setup": {
+        "elapsedMilliseconds": 13212.611,
+        "peakWorkingSetBytes": 1498759168
+      },
+      "artifactSizesBytes": {
+        "circuit": 14571,
+        "r1cs": 5218464,
+        "wasm": 5180981,
+        "sym": 3760774,
+        "zkey": 194832264,
+        "verificationKey": 2041
+      },
+      "trials": [
+        {
+          "trial": 1,
+          "witness": {
+            "elapsedMilliseconds": 536.987,
+            "peakWorkingSetBytes": 109375488,
+            "sizeBytes": 1147500
+          },
+          "prove": {
+            "elapsedMilliseconds": 49420.797,
+            "peakWorkingSetBytes": 1368883200
+          },
+          "verify": {
+            "elapsedMilliseconds": 729.901,
+            "peakWorkingSetBytes": 236482560
+          },
+          "proofJsonSizeBytes": 2256,
+          "publicSignalsSizeBytes": 665
+        },
+        {
+          "trial": 2,
+          "witness": {
+            "elapsedMilliseconds": 549.059,
+            "peakWorkingSetBytes": 107798528,
+            "sizeBytes": 1147500
+          },
+          "prove": {
+            "elapsedMilliseconds": 53315.243,
+            "peakWorkingSetBytes": 1369976832
+          },
+          "verify": {
+            "elapsedMilliseconds": 921.609,
+            "peakWorkingSetBytes": 236007424
+          },
+          "proofJsonSizeBytes": 2251,
+          "publicSignalsSizeBytes": 665
+        },
+        {
+          "trial": 3,
+          "witness": {
+            "elapsedMilliseconds": 662.696,
+            "peakWorkingSetBytes": 107810816,
+            "sizeBytes": 1147500
+          },
+          "prove": {
+            "elapsedMilliseconds": 48590.233,
+            "peakWorkingSetBytes": 1451524096
+          },
+          "verify": {
+            "elapsedMilliseconds": 678.372,
+            "peakWorkingSetBytes": 236527616
+          },
+          "proofJsonSizeBytes": 2249,
+          "publicSignalsSizeBytes": 665
+        }
+      ],
+      "medians": {
+        "witnessMilliseconds": 549.059,
+        "witnessPeakWorkingSetBytes": 107810816.0,
+        "proveMilliseconds": 49420.797,
+        "provePeakWorkingSetBytes": 1369976832.0,
+        "verifyMilliseconds": 729.901,
+        "verifyPeakWorkingSetBytes": 236482560.0,
+        "proofJsonSizeBytes": 2251.0
+      }
+    }
+  ]
+}
