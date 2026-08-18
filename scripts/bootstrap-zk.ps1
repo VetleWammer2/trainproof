@@ -8,10 +8,10 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $toolsDir = Join-Path $projectRoot 'tools'
 $buildDir = Join-Path $projectRoot 'zk\build'
 $circomPath = Join-Path $toolsDir 'circom.exe'
-$ptauPath = Join-Path $buildDir 'powersOfTau28_hez_final_14.ptau'
+$ptauPath = Join-Path $buildDir 'powersOfTau28_hez_final_16.ptau'
 $circuitPath = Join-Path $projectRoot 'zk\circuits\train_step.circom'
 $expectedCircomSha256 = 'e43f132ee6f0aa79b705beceb59c2a7e6a54d7bdeab917ca34e9fc1951d185e1'
-$expectedPtauBlake2b = 'eeefbcf7c3803b523c94112023c7ff89558f9b8e0cf5d6cdcba3ade60f168af4a181c9c21774b94fbae6c90411995f7d854d02ebd93fb66043dbb06f17a831c1'
+$expectedPtauBlake2b = '6a6277a2f74e1073601b4f9fed6e1e55226917efb0f0db8a07d98ab01df1ccf43eb0e8c3159432acd4960e2f29fe84a4198501fa54c8dad9e43297453efec125'
 
 New-Item -ItemType Directory -Force -Path $toolsDir, $buildDir | Out-Null
 
@@ -35,7 +35,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Could not inspect R1CS' }
 
     if ($ForceDownload -or -not (Test-Path -LiteralPath $ptauPath)) {
-        Invoke-WebRequest 'https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_14.ptau' -OutFile $ptauPath
+        Invoke-WebRequest 'https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_16.ptau' -OutFile $ptauPath
     }
     $actualPtauBlake2b = python -c "import hashlib, pathlib; print(hashlib.blake2b(pathlib.Path(r'$ptauPath').read_bytes()).hexdigest())"
     if ($actualPtauBlake2b.Trim() -ne $expectedPtauBlake2b) {

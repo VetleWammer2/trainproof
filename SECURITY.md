@@ -1,7 +1,6 @@
 # Security boundaries
 
-This repository is a research/reference implementation, not an audited
-cryptographic product.
+A research/reference implementation, not an audited cryptographic product.
 
 ## What the signed-transcript verifier establishes
 
@@ -16,35 +15,47 @@ cryptographic product.
 
 It does not publicly establish that worker updates or the aggregate were
 computed correctly. The private audit opens the records and establishes that
-all committed transitions satisfy the reference replay relation, at the cost
-of revealing them to that auditor. Replay does not prove historical execution,
+all committed transitions satisfy the reference replay relation, at the cost of
+revealing them to that auditor. Replay does not prove historical execution,
 wall-clock timing, or physical worker participation.
 
 The demo keys are self-issued. Distinct role keys prevent accidental role
-collapse, but do not establish real-world identity or organizational witness
-independence. Likewise, bundle-local signed timestamps are assertions, not an
-external time anchor.
+collapse. They do not establish real-world identity or organizational witness
+independence. Bundle-local signed timestamps are assertions, not an external
+time anchor.
 
-All verifier commands accept `--trust-policy`. This matches both participant
-key IDs and the exact expected run/input/trajectory/checkpoint claims against a
-policy supplied by the verifier, rather than trusting producer-selected values
-from the bundle itself. The generated `trust-policy.example.json` is only a
-template: authenticate and pin it through an independent channel before use.
+Every verifier command accepts `--trust-policy`. That matches participant key
+IDs and the exact expected run/input/trajectory/checkpoint claims against a
+policy the verifier supplies, instead of trusting producer-selected values from
+the bundle. The generated `trust-policy.example.json` is only a template:
+authenticate and pin it through an independent channel first.
 
-Supplying `--source` makes verification compare the complete fixed-policy
-source manifest, including Git repository/commit/dirty metadata. Without it,
-the verifier checks only the signed source descriptor's internal consistency.
+With `--source`, verification compares the complete fixed-policy source
+manifest, including Git repository/commit/dirty metadata. Without it, the
+verifier checks only the signed source descriptor's internal consistency.
 
 ## What the PLONK verifier establishes
 
 Assuming PLONK soundness, Poseidon security, BN254 assumptions, and a sound
 Powers-of-Tau setup, it establishes existence of a private witness satisfying
-the pinned relation in `zk/circuits/train_step.circom`. The verifier
-recompiles that source, byte-compares its R1CS, rederives the verification key
-from the R1CS and authenticated PoT, and binds a concrete checkpoint opening
-to the proven terminal state. It does not establish:
+the pinned relation in `zk/circuits/train_step.circom`. The verifier recompiles
+that source, byte-compares its R1CS, rederives the verification key from the
+R1CS and digest-matched PoT, and binds a concrete checkpoint opening to the
+proven terminal state.
+
+For the v2 profile, that witness holds exactly four consecutive two-feature
+fixed-point linear-SGD transitions. Every transition proves private dataset and
+ordering membership, shares its output state with the next transition, advances
+the state counter, and is absorbed into the public Poseidon chain. Signed raw
+values, every named intermediate, quotient remainders, and state outputs obey
+[the fixed-point contract](docs/FIXED_POINT.md); overflow rejects rather than
+wraps. That establishes the declared arithmetic relation, not that any
+historical trainer performed it.
+
+It does not establish:
 
 - PyTorch, CUDA, GPU, BF16, FP32, or physical machine execution
+- arbitrary neural-network, tensor, activation, optimizer, or reduction semantics
 - wall-clock timing or compute expenditure
 - dataset ownership, licensing, consent, quality, or absence of poisoning
 - that a custodian's real-world identity is legitimate beyond the configured key
@@ -56,15 +67,17 @@ to the proven terminal state. It does not establish:
 - salt randomness inside the circuit; demo generation uses OS randomness, but
   the circuit does not constrain entropy
 
-The default bootstrap checks the downloaded ceremony file against the BLAKE2b
-hash published by iden3/snarkjs. Pass `-VerifyTranscript` to audit every
-ceremony contribution locally.
+The default bootstrap checks the power-16 ceremony file against the BLAKE2b hash
+published by iden3/snarkjs. Pass `-VerifyTranscript` to audit every ceremony
+contribution locally. The power went up because the measured four-step relation
+is too large for power 14; that does not weaken or remove the relation's
+invariants.
 
-The public transcript and ZK verifiers do not require training records. That
-is not a proof that a malicious producer preserved confidentiality: a producer
-can intentionally encode information in salts, signatures, proof randomness,
-or other permitted cryptographic values. Strict v1 schemas reject unknown
-payload fields and require `additional_roots == {}`, but privacy remains an
+The public transcript and ZK verifiers do not require training records. That is
+not a proof that a malicious producer preserved confidentiality: a producer can
+encode information in salts, signatures, proof randomness, or other permitted
+cryptographic values. Strict schemas reject unknown payload fields (and
+transcript v1 requires `additional_roots == {}`), but privacy remains an
 honest-producer property in addition to the ZK protocol's witness hiding.
 
 ## Production changes required
@@ -83,14 +96,14 @@ honest-producer property in addition to the ZK protocol's witness hiding.
 - Obtain independent reviews of the circuit, host verifier, protocol schemas,
   dependency chain, and trusted setup.
 
-## Dependency note
+## Dependencies
 
-The Python public-transcript verifier depends only on `cryptography` beyond the
-standard library. The optional ZK toolchain pins Circom/snarkjs/circomlib
-versions. Treat npm audit findings and all transitive build dependencies as
-supply-chain review items before deployment; do not run the ZK build toolchain
-inside a privileged production verifier.
+The Python public-transcript verifier needs `cryptography` and nothing else
+beyond the standard library. The optional ZK toolchain pins
+Circom/snarkjs/circomlib versions. Treat npm audit findings and all transitive
+build dependencies as supply-chain review items before deployment. Do not run
+the ZK build toolchain inside a privileged production verifier.
 
-The demo's `private/keys/` directory exists only to make the example
-self-contained. Private replay needs the openings and trace, not those signing
-keys. Never distribute demo key material as an audit package in production.
+The demo's `private/keys/` directory exists to keep the example self-contained.
+Private replay needs the openings and trace, not those signing keys. Never
+distribute demo key material as an audit package in production.

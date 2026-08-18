@@ -24,55 +24,101 @@ from .transparency import (
 from .trust import policy_document, verify_trust_policy
 
 PUBLIC_SIGNAL_ORDER = [
-    "step",
+    "initialStep",
+    "transitionCount",
     "datasetRoot",
     "orderingRoot",
     "codeCommitment",
     "hyperparametersCommitment",
-    "oldStateCommitment",
-    "newStateCommitment",
-    "prevChain",
-    "nextChain",
+    "initialStateCommitment",
+    "finalStateCommitment",
+    "initialChain",
+    "finalChain",
 ]
 
-PTAU_FILE = "powersOfTau28_hez_final_14.ptau"
+PTAU_FILE = "powersOfTau28_hez_final_16.ptau"
 PTAU_BLAKE2B = (
-    "eeefbcf7c3803b523c94112023c7ff89558f9b8e0cf5d6cdcba3ade60f168af4"
-    "a181c9c21774b94fbae6c90411995f7d854d02ebd93fb66043dbb06f17a831c1"
+    "6a6277a2f74e1073601b4f9fed6e1e55226917efb0f0db8a07d98ab01df1ccf4"
+    "3eb0e8c3159432acd4960e2f29fe84a4198501fa54c8dad9e43297453efec125"
 )
 CIRCOM_SHA256 = "e43f132ee6f0aa79b705beceb59c2a7e6a54d7bdeab917ca34e9fc1951d185e1"
-ZK_CIRCUIT_SHA256 = "731370311bf3b3b1048c52e0f6949a9d4991e527f0c47c75bf1286280715770f"
-ZK_R1CS_SHA256 = "82158224ebf252ddc024f2269f4a0c25aaaa6b9c2d11d0f1b3399d11b4227049"
-ZK_SCHEME = "circom-2.2.3/snarkjs-0.7.6/plonk-bn254/v1"
-ZK_RELATION = "bounded-unsigned-linear-training-step/v1"
-ZK_ARITHMETIC = "BN254 field with explicit unsigned range constraints"
-ZK_FIELD_COMMITMENT_MAPPING = "unsigned-big-endian-sha256-mod-bn254/v1"
-ZK_RUN_COMMITMENT_MAPPING = "sha256-utf8-prefix-and-run-id-mod-bn254/v1"
-ZK_HYPERPARAMETERS_SPEC = (
-    "bounded-unsigned-linear-update/lr=1/dataset-depth=2/order-depth=4/v1"
+ZK_CIRCUIT_SHA256 = "64442e1374f5451dc145247dded0d220559a6f465cbb907c8860a7b6c5f9b3d3"
+ZK_R1CS_SHA256 = "a87715bfe95e28562cfe5a08fc9edf1d76ba1f12a7b0a0fcca4b1afa3dc72de1"
+ZK_SCHEME = "circom-2.2.3/snarkjs-0.7.6/plonk-bn254/v2"
+ZK_N_STEPS = 4
+ZK_FEATURE_COUNT = 2
+ZK_DATASET_DEPTH = 2
+ZK_ORDERING_DEPTH = 4
+ZK_RELATION = "bounded-fixed-point-linear-training-chain/n=4/v2"
+ZK_ARITHMETIC = (
+    "signed 16-bit offset fixed point at scale 256 with floor rescaling and "
+    "checked overflow"
 )
+ZK_FIELD_COMMITMENT_MAPPING = "unsigned-big-endian-sha256-mod-bn254/v1"
+ZK_RUN_COMMITMENT_MAPPING = "sha256-utf8-prefix-and-run-id-mod-bn254/v2"
+ZK_HYPERPARAMETERS_SPEC = (
+    "fixed-point-linear-sgd/scale=256/raw=s16-offset-binary/round=floor/"
+    "overflow=reject/features=2/lr-raw=16/n=4/dataset-depth=2/order-depth=4/v2"
+)
+ZK_FIXED_POINT_SPEC = {
+    "scale": 256,
+    "fractionalBits": 8,
+    "rawRange": {"minimum": -32768, "maximum": 32767},
+    "realRange": {"minimumInclusive": "-128", "maximumInclusive": "32767/256"},
+    "encoding": "offset-binary-u16: encoded=raw+32768",
+    "multiplication": (
+        "exact signed raw integer multiplication; two-feature dot product "
+        "accumulated before rescaling"
+    ),
+    "rescaling": "q=floor(n/256), n=256*q+r, 0<=r<256",
+    "rounding": "toward-negative-infinity",
+    "overflow": (
+        "relation-unsatisfied for any fixed-point input, named intermediate, "
+        "or state outside signed-16; counter outside unsigned-32"
+    ),
+    "fieldEmbedding": (
+        "encoded values are canonical integers in [0,65535] in BN254; decoded "
+        "arithmetic is encoded-32768"
+    ),
+    "learningRate": {"raw": 16, "exact": "1/16"},
+    "referenceImplementation": "src/trainproof/fixed_point.py",
+}
+ZK_CIRCUIT_PROFILE = {
+    "nSteps": ZK_N_STEPS,
+    "featureCount": ZK_FEATURE_COUNT,
+    "datasetDepth": ZK_DATASET_DEPTH,
+    "orderingDepth": ZK_ORDERING_DEPTH,
+}
 ZK_PRIVATE_WITNESS_SUMMARY = {
     "datasetSize": 4,
     "orderingLength": 16,
+    "transitionCount": ZK_N_STEPS,
+    "featureCount": ZK_FEATURE_COUNT,
     "revealedTrainingRecords": 0,
 }
 ZK_CLAIMS = {
-    "privateDatasetMembership": True,
-    "privateOrderingMembership": True,
-    "oldStateOpening": True,
-    "deterministicTransition": True,
-    "newStateOpening": True,
-    "poseidonChainTransition": True,
+    "privateDatasetMembershipForEveryTransition": True,
+    "privateOrderingMembershipForEveryTransition": True,
+    "consecutiveOrderingPositions": True,
+    "initialStateOpening": True,
+    "intermediateStateContinuity": True,
+    "deterministicFixedPointTransitions": True,
+    "finalStateOpening": True,
+    "poseidonTransitionChain": True,
     "checkpointOpening": True,
     "unbiasedOrPermutationOrdering": False,
+    "historicalExecution": False,
     "pytorchOrIeeeFloatingPoint": False,
 }
 ZK_ASSURANCE = {
-    "zero_knowledge_transition": True,
-    "private_dataset_membership": True,
-    "private_sample_order_membership": True,
+    "zero_knowledge_transitions": ZK_N_STEPS,
+    "private_dataset_membership_for_every_transition": True,
+    "private_sample_order_membership_for_every_transition": True,
+    "consecutive_ordering_positions": True,
+    "fixed_point_reference_equivalence": "bounded domain defined by fixedPointSpec",
     "arithmetic": ZK_ARITHMETIC,
     "pytorch_or_ieee_floating_point": False,
+    "historical_execution": False,
     "participant_identity": "self-issued demo keys unless verifier pins a trust policy",
     "external_time_anchor": False,
 }
@@ -122,7 +168,9 @@ def _canonical_field(value: Any, label: str, *, maximum: int = BN254_PRIME) -> i
 
 
 def _expected_run_commitment(run_id: str) -> int:
-    return _sha256_field(b"trainproof-zk-run/v1\0" + run_id.encode("ascii"))
+    return _sha256_field(
+        b"trainproof-zk-run/fixed-point-v2\0" + run_id.encode("ascii")
+    )
 
 
 def _validate_statement(statement: Any) -> dict[str, Any]:
@@ -133,6 +181,8 @@ def _validate_statement(statement: Any) -> dict[str, Any]:
             "relation",
             "arithmetic",
             "fieldCommitmentMapping",
+            "fixedPointSpec",
+            "circuitProfile",
             "hyperparametersSpec",
             "runId",
             "runCommitmentMapping",
@@ -144,10 +194,12 @@ def _validate_statement(statement: Any) -> dict[str, Any]:
         "ZK statement",
     )
     if (
-        statement["scheme"] != "circom-plonk-bn254/v1"
+        statement["scheme"] != "circom-plonk-bn254/v2"
         or statement["relation"] != ZK_RELATION
         or statement["arithmetic"] != ZK_ARITHMETIC
         or statement["fieldCommitmentMapping"] != ZK_FIELD_COMMITMENT_MAPPING
+        or statement["fixedPointSpec"] != ZK_FIXED_POINT_SPEC
+        or statement["circuitProfile"] != ZK_CIRCUIT_PROFILE
         or statement["hyperparametersSpec"] != ZK_HYPERPARAMETERS_SPEC
         or statement["runCommitmentMapping"] != ZK_RUN_COMMITMENT_MAPPING
         or statement["privateWitnessSummary"] != ZK_PRIVATE_WITNESS_SUMMARY
@@ -166,16 +218,26 @@ def _validate_statement(statement: Any) -> dict[str, Any]:
     _require_exact_keys(named, set(PUBLIC_SIGNAL_ORDER), "statement public inputs")
     for name in PUBLIC_SIGNAL_ORDER:
         _canonical_field(named[name], f"public input {name}")
-    if int(named["prevChain"]) != _expected_run_commitment(run_id):
+    initial_step = int(named["initialStep"])
+    if int(named["transitionCount"]) != ZK_N_STEPS:
+        raise ZkError("public transition count does not match the circuit profile")
+    if initial_step < 0 or initial_step + ZK_N_STEPS > 1 << ZK_ORDERING_DEPTH:
+        raise ZkError("public step interval is outside the ordering-tree profile")
+    if int(named["initialChain"]) != _expected_run_commitment(run_id):
         raise ZkError("Poseidon chain genesis is not bound to the statement run id")
     return statement
 
 
 def _state_commitment(project_root: Path, opening: Any) -> str:
-    _require_exact_keys(opening, {"w", "b", "rng", "salt"}, "checkpoint opening")
-    limits = {"w": 1 << 33, "b": 1 << 17, "rng": 1 << 32, "salt": BN254_PRIME}
-    for name, maximum in limits.items():
-        _canonical_field(opening[name], f"checkpoint {name}", maximum=maximum)
+    _require_exact_keys(opening, {"w", "b", "counter", "salt"}, "checkpoint opening")
+    weights = opening["w"]
+    if not isinstance(weights, list) or len(weights) != ZK_FEATURE_COUNT:
+        raise ZkError("checkpoint w must contain exactly two encoded values")
+    for index, value in enumerate(weights):
+        _canonical_field(value, f"checkpoint w[{index}]", maximum=1 << 16)
+    _canonical_field(opening["b"], "checkpoint b", maximum=1 << 16)
+    _canonical_field(opening["counter"], "checkpoint counter", maximum=1 << 32)
+    _canonical_field(opening["salt"], "checkpoint salt")
     node = shutil.which("node") or shutil.which("node.exe")
     if node is None:
         raise ZkError("Node.js is required to verify the Poseidon checkpoint opening")
@@ -183,9 +245,10 @@ def _state_commitment(project_root: Path, opening: Any) -> str:
         [
             node,
             str(project_root / "zk" / "scripts" / "state-commitment.mjs"),
-            opening["w"],
+            opening["w"][0],
+            opening["w"][1],
             opening["b"],
-            opening["rng"],
+            opening["counter"],
             opening["salt"],
         ],
         cwd=project_root,
@@ -372,7 +435,7 @@ def _verify_named_public_signals(
         raise ZkError("unexpected PLONK public-signal count")
     named = statement.get("publicInputs")
     if not isinstance(named, dict) or set(named) != set(PUBLIC_SIGNAL_ORDER):
-        raise ZkError("statement public inputs do not match circuit v1")
+        raise ZkError("statement public inputs do not match fixed-point circuit v2")
     for name, actual in zip(PUBLIC_SIGNAL_ORDER, public_signals, strict=True):
         try:
             expected_text = named[name]
@@ -479,20 +542,26 @@ def precommit_zk_demo(
     run_id = statement["runId"]
     opening = read_json(private_dir / "checkpoint.opening.json")
     computed_state_commitment = _state_commitment(project, opening)
-    if computed_state_commitment != statement["publicInputs"]["newStateCommitment"]:
+    if computed_state_commitment != statement["publicInputs"]["finalStateCommitment"]:
         raise ZkError(
-            "checkpoint opening does not match the proof's new-state commitment"
+            "checkpoint opening does not match the proof's final-state commitment"
         )
+    initial_step = int(statement["publicInputs"]["initialStep"])
+    next_step = initial_step + ZK_N_STEPS
+    if int(opening["counter"]) != next_step:
+        raise ZkError("checkpoint counter does not equal initialStep + transitionCount")
     checkpoint = {
         "body": {
             "protocol": PROTOCOL_VERSION,
             "run_id": run_id,
-            "format": "bounded-unsigned-linear-state/v1",
+            "format": "fixed-point-linear-state/offset-binary-s16-scale-256/v2",
             "relation": ZK_RELATION,
-            "step": int(statement["publicInputs"]["step"]),
+            "initial_step": initial_step,
+            "transition_count": ZK_N_STEPS,
+            "next_step": next_step,
             "state": opening,
             "state_commitment": computed_state_commitment,
-            "poseidon_domain": 104,
+            "poseidon_domain": 204,
         }
     }
     write_json(public_dir / "checkpoint.json", checkpoint)
@@ -528,12 +597,12 @@ def precommit_zk_demo(
         "protocol": PROTOCOL_VERSION,
         "run_id": run_id,
         "dataset_id": f"zk-demo-private-dataset/{run_id}",
-        "scheme": "poseidon-salted-records-depth-2/v1",
-        "record_schema": "private-unsigned-scalar-regression/v1",
+        "scheme": "poseidon-salted-fixed-point-records-depth-2/v2",
+        "record_schema": "private-offset-binary-s16-vector2-regression-scale-256/v2",
         "record_count": 4,
         "dataset_root": statement["publicInputs"]["datasetRoot"],
-        "leaf_domain": 101,
-        "node_domain": 102,
+        "leaf_domain": 201,
+        "node_domain": 202,
         "salt_assurance": "demo-producer-random; randomness is not circuit-constrained",
     }
     dataset_statement = {
@@ -545,11 +614,11 @@ def precommit_zk_demo(
     ordering_statement_body = {
         "protocol": PROTOCOL_VERSION,
         "run_id": run_id,
-        "scheme": "poseidon-step-index-ordering-depth-4/v1",
+        "scheme": "poseidon-step-index-ordering-depth-4/v2",
         "ordering_length": 16,
         "ordering_root": statement["publicInputs"]["orderingRoot"],
-        "leaf_domain": 103,
-        "node_domain": 106,
+        "leaf_domain": 203,
+        "node_domain": 206,
         "ordering_assurance": "membership only; permutation and unbiased sampling are not proven",
         "salt_assurance": "demo-producer-random; randomness is not circuit-constrained",
     }
@@ -598,10 +667,12 @@ def precommit_zk_demo(
                 "hyperparameters_commitment": statement["publicInputs"][
                     "hyperparametersCommitment"
                 ],
-                "old_state_commitment": statement["publicInputs"]["oldStateCommitment"],
-                "new_state_commitment": statement["publicInputs"]["newStateCommitment"],
-                "poseidon_genesis": statement["publicInputs"]["prevChain"],
-                "poseidon_final_commitment": statement["publicInputs"]["nextChain"],
+                "initial_step": initial_step,
+                "transition_count": ZK_N_STEPS,
+                "initial_state_commitment": statement["publicInputs"]["initialStateCommitment"],
+                "final_state_commitment": statement["publicInputs"]["finalStateCommitment"],
+                "poseidon_genesis": statement["publicInputs"]["initialChain"],
+                "poseidon_final_commitment": statement["publicInputs"]["finalChain"],
                 "checkpoint_digest": digests["checkpoint"],
             },
         ),
@@ -630,9 +701,12 @@ def precommit_zk_demo(
             "hyperparameters_commitment": statement["publicInputs"][
                 "hyperparametersCommitment"
             ],
-            "old_state_commitment": statement["publicInputs"]["oldStateCommitment"],
-            "new_state_commitment": statement["publicInputs"]["newStateCommitment"],
-            "poseidon_genesis": statement["publicInputs"]["prevChain"],
+            "initial_step": initial_step,
+            "transition_count": ZK_N_STEPS,
+            "initial_state_commitment": statement["publicInputs"]["initialStateCommitment"],
+            "final_state_commitment": statement["publicInputs"]["finalStateCommitment"],
+            "poseidon_genesis": statement["publicInputs"]["initialChain"],
+            "poseidon_final_commitment": statement["publicInputs"]["finalChain"],
         },
     }
     genesis = {
@@ -798,7 +872,9 @@ def seal_zk_demo(output_dir: str | Path, project_root: str | Path) -> dict[str, 
             "run_id",
             "format",
             "relation",
-            "step",
+            "initial_step",
+            "transition_count",
+            "next_step",
             "state",
             "state_commitment",
             "poseidon_domain",
@@ -808,12 +884,19 @@ def seal_zk_demo(output_dir: str | Path, project_root: str | Path) -> dict[str, 
     if (
         checkpoint_body["protocol"] != PROTOCOL_VERSION
         or checkpoint_body["run_id"] != statement["runId"]
-        or checkpoint_body["format"] != "bounded-unsigned-linear-state/v1"
+        or checkpoint_body["format"]
+        != "fixed-point-linear-state/offset-binary-s16-scale-256/v2"
         or checkpoint_body["relation"] != ZK_RELATION
-        or checkpoint_body["step"] != int(statement["publicInputs"]["step"])
-        or checkpoint_body["poseidon_domain"] != 104
+        or checkpoint_body["initial_step"]
+        != int(statement["publicInputs"]["initialStep"])
+        or checkpoint_body["transition_count"] != ZK_N_STEPS
+        or checkpoint_body["next_step"]
+        != int(statement["publicInputs"]["initialStep"]) + ZK_N_STEPS
+        or checkpoint_body["poseidon_domain"] != 204
         or checkpoint_body["state_commitment"]
-        != statement["publicInputs"]["newStateCommitment"]
+        != statement["publicInputs"]["finalStateCommitment"]
+        or int(checkpoint_body["state"]["counter"])
+        != checkpoint_body["next_step"]
         or _state_commitment(project, checkpoint_body["state"])
         != checkpoint_body["state_commitment"]
     ):
@@ -865,9 +948,12 @@ def seal_zk_demo(output_dir: str | Path, project_root: str | Path) -> dict[str, 
         "hyperparameters_commitment": statement["publicInputs"][
             "hyperparametersCommitment"
         ],
-        "old_state_commitment": statement["publicInputs"]["oldStateCommitment"],
-        "new_state_commitment": statement["publicInputs"]["newStateCommitment"],
-        "poseidon_genesis": statement["publicInputs"]["prevChain"],
+        "initial_step": int(statement["publicInputs"]["initialStep"]),
+        "transition_count": ZK_N_STEPS,
+        "initial_state_commitment": statement["publicInputs"]["initialStateCommitment"],
+        "final_state_commitment": statement["publicInputs"]["finalStateCommitment"],
+        "poseidon_genesis": statement["publicInputs"]["initialChain"],
+        "poseidon_final_commitment": statement["publicInputs"]["finalChain"],
     }
     if genesis["body"].get("precommitted_run_inputs") != expected_inputs:
         raise ZkError("genesis does not bind the proof inputs and checkpoint")
@@ -882,9 +968,10 @@ def seal_zk_demo(output_dir: str | Path, project_root: str | Path) -> dict[str, 
         "relation": ZK_RELATION,
         "previous_sha256_commitment": genesis_commitment,
         "poseidon_chain": {
-            "step": statement["publicInputs"]["step"],
-            "previous": statement["publicInputs"]["prevChain"],
-            "next": statement["publicInputs"]["nextChain"],
+            "initial_step": statement["publicInputs"]["initialStep"],
+            "transition_count": statement["publicInputs"]["transitionCount"],
+            "initial": statement["publicInputs"]["initialChain"],
+            "final": statement["publicInputs"]["finalChain"],
         },
         "artifact_digests": artifact_digests,
         "public_claims": ZK_CLAIMS,
@@ -913,7 +1000,7 @@ def seal_zk_demo(output_dir: str | Path, project_root: str | Path) -> dict[str, 
             "run_id": statement["runId"],
             "final_step_commitment": zk_step["step_commitment"],
             "checkpoint_digest": precommit_digests["checkpoint"],
-            "new_state_commitment": statement["publicInputs"]["newStateCommitment"],
+            "final_state_commitment": statement["publicInputs"]["finalStateCommitment"],
         },
     ).hex()
     checkpoint_log_index = append_entry(
@@ -926,8 +1013,8 @@ def seal_zk_demo(output_dir: str | Path, project_root: str | Path) -> dict[str, 
         "scheme": ZK_SCHEME,
         "genesis_commitment": genesis_commitment,
         "final_step_commitment": zk_step["step_commitment"],
-        "poseidon_final_commitment": statement["publicInputs"]["nextChain"],
-        "new_state_commitment": statement["publicInputs"]["newStateCommitment"],
+        "poseidon_final_commitment": statement["publicInputs"]["finalChain"],
+        "final_state_commitment": statement["publicInputs"]["finalStateCommitment"],
         "checkpoint_digest": precommit_digests["checkpoint"],
         "checkpoint_anchor": checkpoint_anchor,
         "transparency_head_digest": hash_object(
@@ -957,7 +1044,7 @@ def seal_zk_demo(output_dir: str | Path, project_root: str | Path) -> dict[str, 
         "run_id": statement["runId"],
         "step_commitment": zk_step["step_commitment"],
         "checkpoint_digest": precommit_digests["checkpoint"],
-        "poseidon_final_commitment": statement["publicInputs"]["nextChain"],
+        "poseidon_final_commitment": statement["publicInputs"]["finalChain"],
         "plonk_verifier": verifier_output,
     }
 
@@ -1078,12 +1165,12 @@ def verify_zk_demo(
             "protocol": PROTOCOL_VERSION,
             "run_id": run_id,
             "dataset_id": f"zk-demo-private-dataset/{run_id}",
-            "scheme": "poseidon-salted-records-depth-2/v1",
-            "record_schema": "private-unsigned-scalar-regression/v1",
+            "scheme": "poseidon-salted-fixed-point-records-depth-2/v2",
+            "record_schema": "private-offset-binary-s16-vector2-regression-scale-256/v2",
             "record_count": 4,
             "dataset_root": statement["publicInputs"]["datasetRoot"],
-            "leaf_domain": 101,
-            "node_domain": 102,
+            "leaf_domain": 201,
+            "node_domain": 202,
             "salt_assurance": "demo-producer-random; randomness is not circuit-constrained",
         }
         if dataset_statement["body"] != expected_dataset_body:
@@ -1097,12 +1184,14 @@ def verify_zk_demo(
         expected_ordering_body = {
             "protocol": PROTOCOL_VERSION,
             "run_id": run_id,
-            "scheme": "poseidon-step-index-ordering-depth-4/v1",
+            "scheme": "poseidon-step-index-ordering-depth-4/v2",
             "ordering_length": 16,
             "ordering_root": statement["publicInputs"]["orderingRoot"],
-            "leaf_domain": 103,
-            "node_domain": 106,
-            "ordering_assurance": "membership only; permutation and unbiased sampling are not proven",
+            "leaf_domain": 203,
+            "node_domain": 206,
+            "ordering_assurance": (
+                "membership only; permutation and unbiased sampling are not proven"
+            ),
             "salt_assurance": "demo-producer-random; randomness is not circuit-constrained",
         }
         if ordering_statement["body"] != expected_ordering_body:
@@ -1123,7 +1212,9 @@ def verify_zk_demo(
                 "run_id",
                 "format",
                 "relation",
-                "step",
+                "initial_step",
+                "transition_count",
+                "next_step",
                 "state",
                 "state_commitment",
                 "poseidon_domain",
@@ -1133,17 +1224,24 @@ def verify_zk_demo(
         if (
             checkpoint_body["protocol"] != PROTOCOL_VERSION
             or checkpoint_body["run_id"] != run_id
-            or checkpoint_body["format"] != "bounded-unsigned-linear-state/v1"
+            or checkpoint_body["format"]
+            != "fixed-point-linear-state/offset-binary-s16-scale-256/v2"
             or checkpoint_body["relation"] != ZK_RELATION
-            or checkpoint_body["step"] != int(statement["publicInputs"]["step"])
-            or checkpoint_body["poseidon_domain"] != 104
+            or checkpoint_body["initial_step"]
+            != int(statement["publicInputs"]["initialStep"])
+            or checkpoint_body["transition_count"] != ZK_N_STEPS
+            or checkpoint_body["next_step"]
+            != int(statement["publicInputs"]["initialStep"]) + ZK_N_STEPS
+            or checkpoint_body["poseidon_domain"] != 204
             or checkpoint_body["state_commitment"]
-            != statement["publicInputs"]["newStateCommitment"]
+            != statement["publicInputs"]["finalStateCommitment"]
+            or int(checkpoint_body["state"]["counter"])
+            != checkpoint_body["next_step"]
             or _state_commitment(project, checkpoint_body["state"])
             != checkpoint_body["state_commitment"]
         ):
             raise ZkError("public checkpoint does not open the proven terminal state")
-        checks.append("exact checkpoint-to-new-state opening")
+        checks.append("exact checkpoint-to-final-state opening")
 
         circuit_bytes = (public_dir / "train_step.circom").read_bytes()
         if int(statement["publicInputs"]["codeCommitment"]) != _sha256_field(
@@ -1192,9 +1290,12 @@ def verify_zk_demo(
             "hyperparameters_commitment": statement["publicInputs"][
                 "hyperparametersCommitment"
             ],
-            "old_state_commitment": statement["publicInputs"]["oldStateCommitment"],
-            "new_state_commitment": statement["publicInputs"]["newStateCommitment"],
-            "poseidon_genesis": statement["publicInputs"]["prevChain"],
+            "initial_step": int(statement["publicInputs"]["initialStep"]),
+            "transition_count": ZK_N_STEPS,
+            "initial_state_commitment": statement["publicInputs"]["initialStateCommitment"],
+            "final_state_commitment": statement["publicInputs"]["finalStateCommitment"],
+            "poseidon_genesis": statement["publicInputs"]["initialChain"],
+            "poseidon_final_commitment": statement["publicInputs"]["finalChain"],
         }
         expected_genesis_body = {
             "protocol": PROTOCOL_VERSION,
@@ -1239,18 +1340,23 @@ def verify_zk_demo(
                     "hyperparameters_commitment": statement["publicInputs"][
                         "hyperparametersCommitment"
                     ],
-                    "old_state_commitment": statement["publicInputs"][
-                        "oldStateCommitment"
+                    "initial_step": int(statement["publicInputs"]["initialStep"]),
+                    "transition_count": ZK_N_STEPS,
+                    "initial_state_commitment": statement["publicInputs"][
+                        "initialStateCommitment"
                     ],
-                    "new_state_commitment": statement["publicInputs"][
-                        "newStateCommitment"
+                    "final_state_commitment": statement["publicInputs"][
+                        "finalStateCommitment"
                     ],
-                    "poseidon_genesis": statement["publicInputs"]["prevChain"],
-                    "poseidon_final_commitment": statement["publicInputs"]["nextChain"],
+                    "poseidon_genesis": statement["publicInputs"]["initialChain"],
+                    "poseidon_final_commitment": statement["publicInputs"]["finalChain"],
                     "checkpoint_digest": precommit_digests["checkpoint"],
                 },
             )
-            identity_trust = "participant keys and expected run claims matched the verifier-supplied trust policy"
+            identity_trust = (
+                "participant keys and expected run claims matched the "
+                "verifier-supplied trust policy"
+            )
             checks.append("verifier-supplied participant and run-claim trust policy")
 
         verify_log(log, operator, witness)
@@ -1293,9 +1399,10 @@ def verify_zk_demo(
             "relation": ZK_RELATION,
             "previous_sha256_commitment": genesis_commitment,
             "poseidon_chain": {
-                "step": statement["publicInputs"]["step"],
-                "previous": statement["publicInputs"]["prevChain"],
-                "next": statement["publicInputs"]["nextChain"],
+                "initial_step": statement["publicInputs"]["initialStep"],
+                "transition_count": statement["publicInputs"]["transitionCount"],
+                "initial": statement["publicInputs"]["initialChain"],
+                "final": statement["publicInputs"]["finalChain"],
             },
             "artifact_digests": artifact_digests,
             "public_claims": ZK_CLAIMS,
@@ -1320,7 +1427,7 @@ def verify_zk_demo(
                 "run_id": run_id,
                 "final_step_commitment": step_commitment,
                 "checkpoint_digest": precommit_digests["checkpoint"],
-                "new_state_commitment": statement["publicInputs"]["newStateCommitment"],
+                "final_state_commitment": statement["publicInputs"]["finalStateCommitment"],
             },
         ).hex()
         expected_subjects = [
@@ -1343,8 +1450,8 @@ def verify_zk_demo(
             "scheme": ZK_SCHEME,
             "genesis_commitment": genesis_commitment,
             "final_step_commitment": step_commitment,
-            "poseidon_final_commitment": statement["publicInputs"]["nextChain"],
-            "new_state_commitment": statement["publicInputs"]["newStateCommitment"],
+            "poseidon_final_commitment": statement["publicInputs"]["finalChain"],
+            "final_state_commitment": statement["publicInputs"]["finalStateCommitment"],
             "checkpoint_digest": precommit_digests["checkpoint"],
             "checkpoint_anchor": checkpoint_anchor,
             "transparency_head_digest": hash_object(
@@ -1386,16 +1493,23 @@ def verify_zk_demo(
             "relation": ZK_RELATION,
             "step_commitment": step_commitment,
             "checkpoint_digest": precommit_digests["checkpoint"],
-            "poseidon_final_commitment": statement["publicInputs"]["nextChain"],
+            "poseidon_final_commitment": statement["publicInputs"]["finalChain"],
             "verifier": verifier_output,
             "assurance": certificate_body["assurance"],
             "identity_trust": identity_trust,
             "limitations": [
-                "The circuit proves one bounded unsigned BN254 transition, not PyTorch or IEEE floating point.",
-                "Ordering-tree membership is proven; a permutation, seed derivation, and unbiased sampling are not.",
-                "Keys and the witness are demo-local unless their key ids and log heads are pinned externally.",
-                "The local pre-proof receipt orders the demo workflow but is not an external timestamp.",
-                "The PoT file hash is pinned; use -VerifyTranscript for a full contribution-by-contribution audit.",
+                "The circuit proves exactly four bounded fixed-point vector "
+                "transitions, not PyTorch, IEEE floating point, or historical "
+                "execution.",
+                "Ordering-tree membership at four consecutive positions is "
+                "proven; a permutation, seed derivation, and unbiased sampling "
+                "are not.",
+                "Keys and the witness are demo-local unless their key ids and "
+                "log heads are pinned externally.",
+                "The local pre-proof receipt orders the demo workflow but is not "
+                "an external timestamp.",
+                "The PoT file hash is pinned; use -VerifyTranscript for a full "
+                "contribution-by-contribution audit.",
             ],
         }
     except Exception as exc:
