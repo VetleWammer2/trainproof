@@ -10,6 +10,7 @@ build/
 node_modules/
 tools/
 zk/build/
+zk/benchmark-work/
 zk/demo-run/
 
 demo-run/

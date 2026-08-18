@@ -41,10 +41,22 @@ Assuming PLONK soundness, Poseidon security, BN254 assumptions, and a sound
 Powers-of-Tau setup, it establishes existence of a private witness satisfying
 the pinned relation in `zk/circuits/train_step.circom`. The verifier
 recompiles that source, byte-compares its R1CS, rederives the verification key
-from the R1CS and authenticated PoT, and binds a concrete checkpoint opening
-to the proven terminal state. It does not establish:
+from the R1CS and digest-matched PoT, and binds a concrete checkpoint opening
+to the proven terminal state.
+
+For the v2 profile, that witness contains exactly four consecutive
+two-feature fixed-point linear-SGD transitions. Every transition proves
+private dataset and ordering membership, shares its output state with the next
+transition, advances the state counter, and is absorbed into the public
+Poseidon chain. Signed raw values, every named intermediate, quotient
+remainders, and state outputs obey [the fixed-point contract](docs/FIXED_POINT.md);
+overflow rejects rather than wraps. This establishes the declared arithmetic
+relation, not that any historical trainer performed it.
+
+It does not establish:
 
 - PyTorch, CUDA, GPU, BF16, FP32, or physical machine execution
+- arbitrary neural-network, tensor, activation, optimizer, or reduction semantics
 - wall-clock timing or compute expenditure
 - dataset ownership, licensing, consent, quality, or absence of poisoning
 - that a custodian's real-world identity is legitimate beyond the configured key
@@ -56,16 +68,19 @@ to the proven terminal state. It does not establish:
 - salt randomness inside the circuit; demo generation uses OS randomness, but
   the circuit does not constrain entropy
 
-The default bootstrap checks the downloaded ceremony file against the BLAKE2b
+The default bootstrap checks the power-16 ceremony file against the BLAKE2b
 hash published by iden3/snarkjs. Pass `-VerifyTranscript` to audit every
-ceremony contribution locally.
+ceremony contribution locally. The power was increased because the measured
+four-step relation is too large for power 14; that does not weaken or remove
+the relation's invariants.
 
 The public transcript and ZK verifiers do not require training records. That
 is not a proof that a malicious producer preserved confidentiality: a producer
 can intentionally encode information in salts, signatures, proof randomness,
-or other permitted cryptographic values. Strict v1 schemas reject unknown
-payload fields and require `additional_roots == {}`, but privacy remains an
-honest-producer property in addition to the ZK protocol's witness hiding.
+or other permitted cryptographic values. Strict schemas reject unknown payload
+fields (and transcript v1 requires `additional_roots == {}`), but privacy
+remains an honest-producer property in addition to the ZK protocol's witness
+hiding.
 
 ## Production changes required
 

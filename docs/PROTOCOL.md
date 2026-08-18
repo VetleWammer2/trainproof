@@ -68,8 +68,9 @@ algorithm, count, and root.
 The transcript verifier can establish that assignments reference committed
 dataset and ordering leaves. The private replay ties those leaves together.
 It also requires equal opened dataset/order counts and binds the initial RNG
-state to the ordering seed commitment and counter zero. The ZK demo performs
-the analogous link inside its circuit.
+state to the ordering seed commitment and counter zero. The ZK profile is
+different: it proves membership at consecutive public positions and binds a
+state counter to those positions, but does not prove seed derivation.
 
 ## Distributed training step
 
@@ -118,57 +119,71 @@ inclusion proof. Coordinator and witness both sign the certificate.
 
 ## Concrete ZK relation
 
-The Circom circuit exposes nine public BN254 field elements:
+The production v2 Circom profile compiles exactly `N = 4`, two features,
+dataset depth 2, and ordering depth 4 into its R1CS. It exposes ten public
+BN254 field elements:
 
 ```text
-step
+initialStep
+transitionCount       // constrained equal to 4
 datasetRoot
 orderingRoot
 codeCommitment
 hyperparametersCommitment
-oldStateCommitment
-newStateCommitment
-prevChain
-nextChain
+initialStateCommitment
+finalStateCommitment
+initialChain
+finalChain
 ```
 
-Its private witness contains one sample, record salt, dataset Merkle path,
-sample index, ordering salt/path, old scalar affine-model state, RNG counter,
-and old/new state salts.
+The private witness contains four record and ordering openings, five shared
+states and salts, and the quotient/remainder witnesses for every fixed-point
+rescale. State `i + 1` is one shared signal array: it is both the output of
+transition `i` and the input of transition `i + 1`.
 
-The circuit enforces:
+For each slot `i` in `[0, N)`, the circuit sets
+`absoluteStep_i = initialStep + i` and enforces:
 
-1. `sampleIndex`, `x`, and `y` open a salted Poseidon leaf under
-   `datasetRoot`.
-2. `(step, sampleIndex)` opens a salted leaf under `orderingRoot`; path bits
-   equal the range-constrained step bits.
-3. The private old state opens `oldStateCommitment`.
-4. All relevant values obey explicit unsigned bit bounds.
-5. `prediction = oldW*x + oldB` and `prediction <= y`.
-6. `delta = y - prediction`, `newW = oldW + delta*x`,
-   `newB = oldB + delta`, and `newRng = oldRng + 1`.
-7. The resulting private state opens `newStateCommitment`.
-8. A domain-separated Poseidon transition maps `prevChain` to `nextChain`
-   while binding all public roots and commitments.
+1. The encoded two-feature sample opens
+   `D_i = Poseidon(201, sampleIndex_i, x0_i, x1_i, y_i, recordSalt_i)` at
+   exactly `sampleIndex_i` under `datasetRoot`; dataset nodes use domain 202.
+2. `O_i = Poseidon(203, absoluteStep_i, sampleIndex_i, orderSalt_i)` opens at
+   exactly `absoluteStep_i` under `orderingRoot`; ordering nodes use domain
+   206. The four positions are therefore consecutive and cannot be reordered,
+   skipped, or inserted within this fixed-size proof.
+3. Every sample value, model value, prediction, error, gradient, parameter
+   step, and resulting model value obeys the fixed-point contract in
+   [FIXED_POINT.md](FIXED_POINT.md). The state counter is unsigned 32-bit and
+   equals `initialStep + i`; state `N` has counter `initialStep + N`.
+4. Each shared state opens
+   `S_i = Poseidon(204, w0Encoded_i, w1Encoded_i, bEncoded_i, counter_i, salt_i)`.
+   `S_0` and `S_N` equal the public initial/final commitments.
+5. The exact opened transition is absorbed as
+   `T_i = Poseidon(205, absoluteStep_i, datasetRoot, orderingRoot,
+   codeCommitment, hyperparametersCommitment, D_i, O_i, S_i, S_(i+1))`.
+6. The ordered chain advances as `C_(i+1) = Poseidon(207, C_i, T_i)`, with
+   public endpoints `C_0 = initialChain` and `C_N = finalChain`.
 
-The host profile additionally binds `prevChain` to a fresh 128-bit `run_id`,
-derives `codeCommitment` from the pinned circuit bytes, derives the
-hyperparameter commitment from the fixed v1 specification, and requires all
-public field elements to be canonical decimal strings in `[0, p)`.
-The host also enforces the exact snarkjs PLONK proof schema and canonical
-curve/scalar field encodings before invoking the cryptographic verifier.
+The host binds `initialChain` to
+`SHA256("trainproof-zk-run/fixed-point-v2\0" || ASCII(runId)) mod p`, derives
+`codeCommitment` from the exact LF bytes enforced by `.gitattributes`, derives the
+hyperparameter commitment from the complete fixed v2 profile string, and
+requires every public field element to be a canonical decimal string in
+`[0, p)`. It also enforces the exact snarkjs PLONK proof schema and canonical
+curve/scalar encodings before invoking the cryptographic verifier.
 
-The ordering relation proves only membership of `(step, sampleIndex)` in the
-committed tree. It does not prove that this tree is a permutation, that it was
-derived from a seed or VRF, or that sampling was unbiased.
+This ordering relation proves membership at four consecutive positions only.
+It does not prove that the 16-leaf ordering tree is a permutation, derived
+from a seed or VRF, or unbiased.
 
 Before proof generation, the producer signs dataset and ordering statements,
-a run genesis, and a concrete public checkpoint opening, then records their
-roots in a three-entry witnessed log head. After proof generation, the proof,
-public vector, verification key, circuit source, R1CS, precommit receipt, and
-checkpoint each receive a domain-separated SHA-256 digest inside a
-coordinator-signed step envelope. The verifier recompiles source to R1CS and
-deterministically rederives the verification key from the authenticated PoT.
-It then appends and verifies the proof step plus exact checkpoint anchor.
-The local pre-proof head gives sequence within the supplied view; external
-publication is still required for trusted time and fork resistance.
+a run genesis, and the concrete terminal checkpoint opening, then records
+their roots in a three-entry witnessed log head. After proof generation, the
+proof, public vector, verification key, circuit source, R1CS, precommit
+receipt, and checkpoint receive domain-separated SHA-256 digests inside a
+coordinator-signed envelope. The verifier recompiles source to R1CS,
+byte-compares it, and deterministically rederives the verification key from
+the power-16 PoT matched to the pinned upstream digest. It then verifies the proof step and exact
+checkpoint anchor. The local pre-proof head gives sequence within the supplied
+view; external publication remains required for trusted time and fork
+resistance.

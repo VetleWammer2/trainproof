@@ -60,7 +60,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Named public-signal binding failed' }
     python .\scripts\seal-zk-demo.py $outputDir
     if ($LASTEXITCODE -ne 0) { throw 'Could not seal the ZK proof envelope' }
-    python -m trainproof zk-verify $outputDir --toolchain-root $projectRoot
+    python .\scripts\verify-zk-demo.py $outputDir
     if ($LASTEXITCODE -ne 0) { throw 'Independent public ZK verification failed after sealing' }
 }
 finally {
